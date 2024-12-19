@@ -1,5 +1,13 @@
-
 #include <stdint.h>
+
+#define EXTI_BASE 0x40010400
+#define EXTI ((EXTI_t *)EXTI_BASE)
+#define EXTI15_10_IRQn 40
+#define NVIC_ISER1 ((uint32_t *)(0xE000E104)) // NVIC Interrupt Set-Enable Register
+#define SYSCFG_BASE 0x40010000
+#define SYSCFG ((SYSCFG_t *)SYSCFG_BASE)
+#define GPIOA ((GPIO_t *)0x48000000) // Base address of GPIOA
+#define GPIOC ((GPIO_t *)0x48000800) // Base address of GPIOC
 
 typedef struct {
     volatile uint32_t MEMRMP;
@@ -23,7 +31,6 @@ typedef struct {
     volatile uint32_t PR2;
 } EXTI_t;
 
-
 typedef struct {
     volatile uint32_t MODER;
     volatile uint32_t OTYPER;
@@ -35,11 +42,11 @@ typedef struct {
     volatile uint32_t LCKR;
     volatile uint32_t AFR[2];
     volatile uint32_t BRR;
-
 } GPIO_t;
 
 void init_gpio_pin(GPIO_t *GPIOx, uint8_t pin, uint8_t mode);
-void configure_gpio(void);
-
-uint8_t gpio_button_is_pressed(void);
-void gpio_toggle_led(void);
+void configure_gpio(uint8_t button_pin1, uint8_t button_pin2, uint8_t led_pin_right, uint8_t led_pin_left, uint8_t led_pin_in);
+void gpio_toggle_led(uint8_t led_pin);
+uint8_t gpio_button_is_pressed(uint8_t button_pin);
+uint8_t gpio_button_is_released(uint8_t button_pin);
+uint8_t gpio_button_flag(uint8_t button_pin);

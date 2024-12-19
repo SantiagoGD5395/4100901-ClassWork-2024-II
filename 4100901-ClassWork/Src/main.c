@@ -1,49 +1,34 @@
+/*Incluir librerias */
 #include <stdint.h>
-
 #include "systick.h"
 #include "gpio.h"
 #include "uart.h"
+#include "drive.h"
 
-extern uint8_t button_pressed;
+/*Definicion de Pines*/
 
-void check_button_event(void)
-{
-    if (button_pressed == 1) {
-        UART_send_string(USART2, "Single press detected\r\n");
-        button_pressed = 0;
-    } else if (button_pressed == 2) {
-        UART_send_string(USART2, "Double press detected\r\n");
-        button_pressed = 0;
-    }
-}
+#define LED_PIN_IN 5
+#define LED_PIN_RIGHT 7
+#define LED_PIN_LEFT 6
+#define BUTTON_PIN_1 13
+#define BUTTON_PIN_2 14
 
-int main(void)
-{
-    configure_systick_and_start();
-    configure_gpio();
-    
-    UART_Init(USART2);
 
-    UART_send_string(USART2, "Hello World, from main!\r\n");
-
-    extern uint8_t rx_byte;
-
-    uint32_t hearbeat_tick = 0;
+int main(void) {
+    configure_systick_and_start();// parpadeo
+    configure_gpio(BUTTON_PIN_1, BUTTON_PIN_2, LED_PIN_RIGHT, LED_PIN_LEFT, LED_PIN_IN);
+    LedToggleTask toggle_task = {0}; 
     while (1) {
-        if (systick_GetTick() - hearbeat_tick > 500) {
-            hearbeat_tick = systick_GetTick();
-            check_button_event(); // Check for button press events every 500 ms
-            gpio_toggle_led();
+        if (systick_GetTick(COUNTER_A) >= 500) {   
+            gpio_toggle_led(LED_PIN_IN);
+            systick_reset(COUNTER_A);
         }
-        if (rx_byte != 0) {
-            uint8_t command = rx_byte;
-            UART_send_string(USART2, "Command received: ");
-            UART_send_char(USART2, command);
-            UART_send_string(USART2, "\r\n");
-            rx_byte = 0; // Reset command
+        if (!toggle_task.active && gpio_button_flag(BUTTON_PIN_1)) {
+            start_toggle_task(&toggle_task, LED_PIN_RIGHT);
         }
-        
-        // TODO: Run the FSM here       
+        if (!toggle_task.active && gpio_button_flag(BUTTON_PIN_2)) {
+            start_toggle_task(&toggle_task, LED_PIN_LEFT);
+        }
+        handle_toggle_task(&toggle_task, systick_GetTick(COUNTER_B)); 
     }
 }
-
